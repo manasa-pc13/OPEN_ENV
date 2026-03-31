@@ -1,0 +1,58 @@
+name: data-cleaning-agent-environment
+description: >
+  A step-by-step Data Cleaning environment using an OpenEnv-style API.
+  The agent receives a messy dataset and must clean it using discrete actions
+  like filling missing values, removing duplicates, fixing formats, and normalizing columns.
+
+tasks:
+  - id: easy
+    difficulty: easy
+    goal: Fix missing numeric values.
+  - id: medium
+    difficulty: medium
+    goal: Fix missing values and remove duplicate rows.
+  - id: hard
+    difficulty: hard
+    goal: Fix missing values, remove duplicates, fix currency/date formats, and normalize salary.
+
+action_space:
+  type: object
+  description: Action sent to step(action).
+  fields:
+    type:
+      type: string
+      enum:
+        - remove_nulls
+        - fill_mean
+        - remove_duplicates
+        - fix_format
+        - normalize_column
+    column:
+      type: string
+      optional: true
+      description: Required when type is normalize_column.
+
+observation_space:
+  type: object
+  description: Observation returned by reset() and step().
+  fields:
+    task_id: { type: string }
+    difficulty: { type: string, enum: [easy, medium, hard] }
+    step_count: { type: integer }
+    max_steps: { type: integer }
+    dataset_preview:
+      type: array
+      items: { type: object }
+    null_counts:
+      type: object
+      additionalProperties: { type: integer }
+    duplicate_count: { type: integer }
+    format_issues:
+      type: object
+      additionalProperties:
+        type: array
+        items: { type: string }
+    normalized_columns:
+      type: array
+      items: { type: string }
+
