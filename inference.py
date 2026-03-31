@@ -49,11 +49,13 @@ def openai_next_action(obs: Dict[str, Any], task_id: str) -> Dict[str, Any]:
     Ask OpenAI for the single best next action.
     If anything fails, caller should fall back to rule-based.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("HF_TOKEN")
+    base_url = os.getenv("API_BASE_URL")
+    model_name = os.getenv("MODEL_NAME", "gpt-4.1-mini")
     if not api_key or OpenAI is None:
-        raise RuntimeError("OpenAI not configured (missing OPENAI_API_KEY or openai package).")
+        raise RuntimeError("OpenAI not configured (missing HF_TOKEN or openai package).")
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(base_url=base_url, api_key=api_key) if base_url else OpenAI(api_key=api_key)
 
     system = (
         "You are a data cleaning agent. "
@@ -75,16 +77,16 @@ def openai_next_action(obs: Dict[str, Any], task_id: str) -> Dict[str, Any]:
         ],
     }
 
-    resp = client.responses.create(
-        model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
-        input=[
+    resp = client.chat.completions.create(
+        model=model_name,
+        messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": json.dumps(payload)},
         ],
         temperature=0.0,
     )
 
-    text = resp.output_text.strip()
+    text = resp.choices[0].message.content.strip()
     return json.loads(text)
 
 
