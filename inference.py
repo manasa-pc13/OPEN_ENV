@@ -7,6 +7,23 @@ from typing import Any, Dict, List, Optional
 from env import DataCleaningEnv
 from tasks import TASKS
 
+BENCHMARK = os.getenv("BENCHMARK", "data_cleaning")
+
+def log_start(task: str, env: str, model: str) -> None:
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]) -> None:
+    error_val = error if error else "null"
+    done_val = str(done).lower()
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
+        flush=True,
+    )
+
+def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}", flush=True)
+
 # Optional OpenAI usage (fallback to rules if no API key).
 # This project runs fine without OpenAI.
 try:
@@ -50,8 +67,8 @@ def openai_next_action(obs: Dict[str, Any], task_id: str) -> Dict[str, Any]:
     If anything fails, caller should fall back to rule-based.
     """
     api_key = os.getenv("HF_TOKEN")
-    base_url = os.getenv("API_BASE_URL")
-    model_name = os.getenv("MODEL_NAME", "gpt-4.1-mini")
+    base_url = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+    model_name = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
     if not api_key or OpenAI is None:
         raise RuntimeError("OpenAI not configured (missing HF_TOKEN or openai package).")
 
@@ -91,37 +108,50 @@ def openai_next_action(obs: Dict[str, Any], task_id: str) -> Dict[str, Any]:
 
 
 def run_task(task_id: str) -> None:
-    print("\n" + "=" * 70)
-    print(f"Task: {task_id} ({TASKS[task_id].difficulty})")
-    print(f"Goal: {TASKS[task_id].description}")
+    print(f"[DEBUG] \n" + "=" * 70, flush=True)
+    print(f"[DEBUG] Task: {task_id} ({TASKS[task_id].difficulty})", flush=True)
+    print(f"[DEBUG] Goal: {TASKS[task_id].description}", flush=True)
 
     env = DataCleaningEnv(task_id=task_id, max_steps=10)
     obs_model = env.reset()
 
+    model_name = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+    log_start(task=task_id, env=BENCHMARK, model=model_name)
+
     done = False
+    step_count = 0
+    rewards: List[float] = []
+
     while not done:
+        step_count += 1
         obs = obs_model.model_dump()
 
         # Choose action
         action: Optional[Dict[str, Any]] = None
+        error_msg = None
         try:
             action = openai_next_action(obs, task_id)
-            print(f"[agent] OpenAI action: {action}")
+            print(f"[DEBUG] OpenAI action: {action}", flush=True)
         except Exception as e:
             plan = rule_based_plan(obs, task_id)
             action = plan[0]
-            print(f"[agent] Fallback action: {action} (reason: {e})")
+            print(f"[DEBUG] Fallback action: {action} (reason: {e})", flush=True)
 
         obs_model, reward, done, info = env.step(action)
+        rewards.append(reward)
 
-        print(f"[reward] {reward:.3f}")
-        print(f"[info] {info['message']}")
+        log_step(step=step_count, action=str(action).replace('"', "'"), reward=reward, done=done, error=error_msg)
 
         if done:
-            print(f"[final] grader_score={info.get('grader_score_if_done')}")
-            print(f"[final] total_reward={info.get('total_reward_so_far')}")
-            print("[final] cleaned dataset:")
-            print(env.state()["dataset"])
+            grader_score = float(info.get('grader_score_if_done', 0.0))
+            score = max(0.0, min(1.0, grader_score))
+            success = score >= 1.0
+            
+            print(f"[DEBUG] grader_score={grader_score}", flush=True)
+            print(f"[DEBUG] total_reward={info.get('total_reward_so_far')}", flush=True)
+            print(f"[DEBUG] cleaned dataset: {env.state()['dataset']}", flush=True)
+            
+            log_end(success=success, steps=step_count, score=score, rewards=rewards)
 
 
 def main() -> None:

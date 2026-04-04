@@ -107,7 +107,7 @@ class DataCleaningEnv:
         self._normalized_columns = set()
 
         obs = self._make_observation()
-        print(f"[reset] task_id={self.task_id} difficulty={self._task.difficulty}")
+        print(f"[DEBUG] reset task_id={self.task_id} difficulty={self._task.difficulty}")
         return obs
 
     def state(self) -> Dict[str, Any]:
@@ -165,7 +165,7 @@ class DataCleaningEnv:
                 grader_score_if_done=float(grade_dataset(self._dataset, self._task)) if done else None,
                 total_reward_so_far=self._total_reward,
             ).model_dump()
-            print(f"[step] invalid action reward={reward:.3f} done={done}")
+            print(f"[DEBUG] step invalid action reward={reward:.3f} done={done}")
             return obs, reward, done, info
 
         before = copy.deepcopy(self._dataset)
@@ -208,7 +208,7 @@ class DataCleaningEnv:
         ).model_dump()
 
         print(
-            f"[step] {self._step_count}/{self.max_steps} action={a.type} "
+            f"[DEBUG] step {self._step_count}/{self.max_steps} action={a.type} "
             f"status={status} reward={reward:.3f} done={done}"
         )
         return obs, reward, done, info
