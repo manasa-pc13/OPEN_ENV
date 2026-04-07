@@ -229,7 +229,7 @@ class DataCleaningEnv:
 
     def _check_done_or_limit(self) -> bool:
         score = float(grade_dataset(self._dataset, self._task))
-        if score >= 0.999:
+        if score >= 0.99:
             self._done = True
             return True
         if self._step_count >= self.max_steps:

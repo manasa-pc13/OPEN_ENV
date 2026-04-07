@@ -131,11 +131,11 @@ def grade_dataset(cleaned: List[Dict[str, Any]], task: TaskSpec) -> float:
         # For easy/medium we do not require normalization, so we don't penalize it.
         score += 0.2
 
-    score = float(max(0.0, min(1.0, score)))
+    score = float(max(0.001, min(0.999, score)))
 
     # Perfect score requires matching the expected output.
-    if score >= 0.999 and not _rows_equal_with_tolerance(cleaned, task.expected_clean):
+    if score >= 0.99 and not _rows_equal_with_tolerance(cleaned, task.expected_clean):
         score = 0.95
 
-    return float(max(0.0, min(1.0, score)))
+    return float(max(0.001, min(0.999, score)))
 

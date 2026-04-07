@@ -144,8 +144,8 @@ def run_task(task_id: str) -> None:
 
         if done:
             grader_score = float(info.get('grader_score_if_done', 0.0))
-            score = max(0.0, min(1.0, grader_score))
-            success = score >= 1.0
+            score = max(0.001, min(0.999, grader_score))
+            success = score >= 0.99
             
             print(f"[DEBUG] grader_score={grader_score}", flush=True)
             print(f"[DEBUG] total_reward={info.get('total_reward_so_far')}", flush=True)
