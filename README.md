@@ -63,9 +63,9 @@ This will start your web server exposing `/reset`, `/step` and `/state` APIs!
 ### Running the Inference Baseline
 The baseline agent uses a standard OpenAI API client. Ensure your credentials are set before running:
 ```powershell
-$env:API_BASE_URL="https://api.openai.com/v1/"
-$env:HF_TOKEN="YOUR_API_KEY"
-$env:MODEL_NAME="gpt-4o-mini" # Or your preference
+$env:HF_TOKEN="YOUR_HUGGINGFACE_WRITE_TOKEN"
+$env:API_BASE_URL="https://router.huggingface.co/v1"
+$env:MODEL_NAME="Qwen/Qwen2.5-72B-Instruct" # Or your preference
 
 python inference.py
 ```
@@ -73,9 +73,9 @@ python inference.py
 
 ### Baseline Scores (Reproducibility)
 Using the baseline inference script, the agent accurately reproduces a perfect score across tasks:
-- **Easy**: `1.0` Score
-- **Medium**: `1.0` Score
-- **Hard**: `1.0` Score
+- **Easy**: `0.999` Score
+- **Medium**: `0.999` Score
+- **Hard**: `0.999` Score
 
 ### Containerized Execution (Docker)
 The Docker image encapsulates the FastAPI backend directly, mapping to the 7860 port Hugging Face Spaces expect.
